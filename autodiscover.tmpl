@@ -1,0 +1,53 @@
+include         fastcgi_params;
+fastcgi_index   index.php;
+fastcgi_param   SCRIPT_FILENAME $document_root$fastcgi_script_name;
+fastcgi_param   REQUEST_URI $1;
+fastcgi_param   PHP_FLAG "magic_quotes_gpc=off \n register_globals=off \n magic_quotes_runtime=off \n short_open_tag=on";
+fastcgi_param   PHP_VALUE "post_max_size=20M \n upload_max_filesize=20M \n max_execution_time=3660";
+fastcgi_param   HTTP_PROXY ""; # Mitigate https://httpoxy.org/ vulnerabilities
+fastcgi_read_timeout 3660;
+
+# MS Outlook
+# sample1: https://example.com/autodiscover/autodiscover.xml
+# sample2: https://example.com/Autodiscover/Autodiscover.xml
+location ~* ^/autodiscover/autodiscover.xml {
+    root /var/www/html/autoconfig;
+    try_files /autodiscover.php =404;
+    include        fastcgi.conf;
+    fastcgi_pass   php_workers;
+
+    access_log  /var/log/nginx/autodiscover-access.log;
+    error_log   /var/log/nginx/autodiscover-error.log;
+}
+
+# Thunderbird
+# sample1: https://example.com/.well-known/autoconfig/mail/config-v1.1.xml
+# sample2: https://example.com/mail/config-v1.1.xml
+#location = /.well-known/autoconfig/mail/config-v1.1.xml {
+location = /mail/config-v1.1.xml {
+    root /var/www/html/autoconfig;
+    try_files /config-v1.1.php =404;
+    include        fastcgi.conf;
+    fastcgi_pass   php_workers;
+
+    access_log  /var/log/nginx/autodiscover-access.log;
+    error_log   /var/log/nginx/autodiscover-error.log;
+}
+
+# Apple devices
+# sample: https://example.com/apple/get-mobileconfig
+location = /apple/get-mobileconfig {
+    root /var/www/html/autoconfig;
+    try_files /apple.php =404;
+    include        fastcgi.conf;
+    fastcgi_pass   php_workers;
+
+    access_log  /var/log/nginx/autodiscover-access.log;
+    error_log   /var/log/nginx/autodiscover-error.log;
+}
+
+# disable logging for Apple Touch Icons
+location ~ /apple-touch-icon(|-\d+x\d+)(|-precomposed).png {
+    log_not_found off;
+    access_log off;
+}
